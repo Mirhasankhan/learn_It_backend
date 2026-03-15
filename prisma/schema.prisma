@@ -1,0 +1,774 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String               @id @default(auto()) @map("_id") @db.ObjectId
+  userName           String?
+  email              String?              @unique
+  phoneNumber        String?              @unique
+  gender             Gender               @default(MALE)
+  education          String?
+  profileImage       String?
+  fcmToken           String?
+  cvUrl              String?
+  referralSource     String?
+  age                String?
+  uniqueId           String?
+  subscriptionType   String?              @default("Free")
+  avgRating          Float                @default(0)
+  totalReview        Int                  @default(0)
+  role               UserRole?
+  isSetup            Boolean              @default(false)
+  status             UserStatus           @default(PENDING)
+  createdAt          DateTime             @default(now())
+  suspendUntil       DateTime?            @default(now())
+  updatedAt          DateTime             @updatedAt
+  userLocation       UserLocation[]
+  UserProfile        UserProfile[]
+  ExpertProfile      ExpertProfile[]
+  Experience         Experience[]
+  NotifyOption       NotifyOption[]
+  Availability       Availability[]
+  Service            Service[]
+  expertBookings     Booking[]            @relation("ExpertBookings")
+  seekerBookings     Booking[]            @relation("SeekerBookings")
+  sender             Room[]               @relation("user1Relation")
+  receiver           Room[]               @relation("user2Relation")
+  favourite          Favourite[]          @relation("UserFavourites")
+  expertFavourites   Favourite[]          @relation("ExpertFavourites")
+  givenReviews       Review[]             @relation("Seeker")
+  receivedReviews    Review[]             @relation("Expert")
+  Earnings           Earnings[]
+  PayoutAccount      PayoutAccount[]
+  withdraws          Withdraw[]
+  userSubscription   UserSubscription?
+  expertSubscription ExpertSubscription?
+  adminNotifications AdminNotifications[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @unique @db.ObjectId
+  currentSituation String
+  targetIndustry   String[]
+  aimingRole       String?
+  experience       String
+  expectedSalary   String
+  profileImage     String?
+  availability     String
+  confidence       String
+  struggleArea     String
+  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("userProfiles")
+}
+
+model ExpertProfile {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @unique @db.ObjectId
+  targetIndustry  String[]
+  experience      String
+  introVideo      String
+  currentEarnings Int      @default(0)
+  allTimeEarnings Int      @default(0)
+  certificates    String[]
+  about           String
+  linkedInUrl     String
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("expertProfiles")
+}
+
+model Experience {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  expertId    String   @db.ObjectId
+  title       String
+  companyName String
+  duration    String
+  description String
+  expert      User?    @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("experiences")
+}
+
+model Availability {
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId
+  expertId  String          @db.ObjectId
+  dayOfWeek Int
+  slots     AvailableSlot[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [expertId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+model AvailableSlot {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  availabilityId String       @db.ObjectId
+  startTime      String
+  endTime        String
+  availability   Availability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("availableSlots")
+}
+
+model Service {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  expertId     String?      @db.ObjectId
+  serviceType  TServiceType
+  serviceName  String
+  about        String
+  price        Float
+  duration     String?
+  totalReview  Int          @default(0)
+  avgReview    Float        @default(0)
+  delivery     String?
+  serviceImage String
+  expert       User?        @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  Booking      Booking[]
+
+  @@map("services")
+}
+
+model Booking {
+  id                 String          @id @default(auto()) @map("_id") @db.ObjectId
+  expertId           String          @db.ObjectId
+  userId             String          @db.ObjectId
+  serviceId          String          @db.ObjectId
+  price              Int
+  linkedInUrl        String?
+  cvUrl              String?
+  note               String?
+  startTime          String?
+  originalStartTime  String?
+  deliveryTime       DateTime?
+  date               DateTime?
+  originalDate       DateTime?
+  sessionDuration    String?
+  roomId             String?
+  orderId            String
+  transactionid      String?
+  refundedAmount     Float           @default(0)
+  penaltyAmount      Float           @default(0)
+  compensationAmount Float           @default(0)
+  cancelledBy        UserRole        @default(USER)
+  status             BookingStatus   @default(In_Progress)
+  moyasarId          String?
+  paymentMethod      String?
+  isReviewed         Boolean         @default(false)
+  isReportedByUser   Boolean         @default(false)
+  isReportedByExpert Boolean         @default(false)
+  isFeedbackGiven    Boolean         @default(false)
+  isPayment          Boolean         @default(false)
+  expert             User            @relation("ExpertBookings", fields: [expertId], references: [id], onDelete: Cascade)
+  seeker             User            @relation("SeekerBookings", fields: [userId], references: [id], onDelete: Cascade)
+  service            Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  feedbacks          Feedback[]
+  recordings         Recording[]
+  reports            Report[]
+  userReports        userReport[]
+  expertReports      expertReport[]
+  earnings           Earnings[]
+  reviews            Review[]
+  adminEarnings      AdminEarnings[]
+  refunds            Refund[]
+  rooms              Room[]
+
+  @@map("bookings")
+}
+
+model Recording {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId        String    @db.ObjectId
+  taskId           String    @unique
+  userfileUrl      String?
+  userJoinedAt     Int?
+  userLeftAt       Int?
+  expertJoinedAt   Int?
+  expertLeftAt     Int?
+  expertfileUrl    String?
+  userDuration     Float?
+  expertDuration   Float?
+  userFileExpireAt DateTime?
+  status           Boolean   @default(false)
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("recordings")
+}
+
+model Report {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId   String   @db.ObjectId
+  userId      String   @db.ObjectId
+  subject     TSubject
+  description String
+  adminsReply String?
+  isResponded Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+
+  @@map("reports")
+}
+
+model userReport {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId   String            @unique @db.ObjectId
+  orderId     String
+  userId      String            @db.ObjectId
+  reportId    String?
+  subject     TUserSubject
+  fileUrl     String?
+  description String
+  adminsReply String?
+  status      TUserReportStatus @default(Pending)
+  isResponded Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  booking     Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("userReports")
+}
+
+model expertReport {
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId   String              @unique @db.ObjectId
+  orderId     String
+  reportId    String?
+  expertId    String              @db.ObjectId
+  subject     TExpertSubject
+  fileUrl     String?
+  description String
+  adminsReply String?
+  status      TExpertReportStatus @default(Pending)
+  isResponded Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  booking     Booking             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("expertReports")
+}
+
+model Feedback {
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId       String  @unique @db.ObjectId
+  confidence      Int?
+  speaking        Int?
+  professionalism Int?
+  thinking        Int?
+  management      Int?
+  technique       Int?
+  overall         Int?
+  comment         String?
+  booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("feedbacks")
+}
+
+model NotifyOption {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
+  all         Boolean  @default(true)
+  onehour     Boolean  @default(true)
+  fifteen     Boolean  @default(true)
+  cancelled   Boolean  @default(true)
+  rescheduled Boolean  @default(true)
+  newSession  Boolean  @default(true)
+  review      Boolean  @default(true)
+  payments    Boolean  @default(true)
+  withdraw    Boolean  @default(true)
+  refund      Boolean  @default(true)
+  offers      Boolean  @default(true)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("notifyOptions")
+}
+
+model Notification {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  receiverId String?           @db.ObjectId
+  senderId   String?           @db.ObjectId
+  title      String?
+  content    String
+  type       TNotificationType
+  typeId     String?           @db.ObjectId
+  isRead     Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@map("notifications")
+}
+
+model UserLocation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_locations")
+}
+
+model Otp {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  phoneNumber String   @unique
+  fcmToken    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("otps")
+}
+
+model RecentSearch {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String
+  searchTerm String
+  createdAt  DateTime @default(now())
+
+  @@map("recentSearches")
+}
+
+model Room {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId  String   @db.ObjectId
+  senderId   String?  @db.ObjectId
+  receiverId String?  @db.ObjectId
+  isFlagged  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user1      User?    @relation("user1Relation", fields: [senderId], references: [id], onDelete: Cascade)
+  user2      User?    @relation("user2Relation", fields: [receiverId], references: [id], onDelete: Cascade)
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  message Message[]
+
+  // @@unique([senderId, receiverId])
+  @@map("rooms")
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomId    String   @db.ObjectId
+  user1Id   String   @db.ObjectId
+  user2Id   String   @db.ObjectId
+  content   String?
+  fileUrl   String[]
+  user1Read Boolean  @default(false)
+  user2Read Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Favourite {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  expertId  String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expert    User?    @relation("ExpertFavourites", fields: [expertId], references: [id], onDelete: Cascade)
+  user      User?    @relation("UserFavourites", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("favourites")
+}
+
+model Earnings {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId String   @unique @db.ObjectId
+  expertId  String   @db.ObjectId
+  amount    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expert    User?    @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("earnings")
+}
+
+model AdminEarnings {
+  id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId          String?             @db.ObjectId
+  userSubId          String?             @db.ObjectId
+  expertSubId        String?             @db.ObjectId
+  earningType        TEarningType
+  amount             Int
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  booking            Booking?            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userSubscription   UserSubscription?   @relation(fields: [userSubId], references: [id], onDelete: Cascade)
+  expertSubscription ExpertSubscription? @relation(fields: [expertSubId], references: [id], onDelete: Cascade)
+
+  @@map("adminEarnings")
+}
+
+model Refund {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId String   @db.ObjectId
+  amount    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("refunds")
+}
+
+model Activity {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  adminId   String   @db.ObjectId
+  work      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  admin     Admin?   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+model AdminNotifications {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  receiver  TReceivers
+  content   String
+  userId    String?    @db.ObjectId
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("adminNotifications")
+}
+
+model Withdraw {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  expertId      String         @db.ObjectId
+  amount        Int
+  payoutId      String         @db.ObjectId
+  sourceId      String
+  withdrawId    String
+  status        WithdrawStatus @default(Pending)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  expert        User?          @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  payoutAccount PayoutAccount? @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+
+  @@map("withdraws")
+}
+
+model PayoutAccount {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  expertId  String     @db.ObjectId
+  sourceId  String
+  iban      String
+  name      String
+  mobile    String
+  city      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  expert    User?      @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  withdraws Withdraw[]
+
+  @@map("payoutAccounts")
+}
+
+model Review {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  bookingId String   @db.ObjectId
+  expertId  String   @db.ObjectId
+  comment   String?
+  rating    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  seeeker   User     @relation("Seeker", fields: [userId], references: [id], onDelete: Cascade)
+  expert    User     @relation("Expert", fields: [expertId], references: [id], onDelete: Cascade)
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Admin {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  phoneNumber  String     @unique
+  role         AdminRole
+  name         String?
+  profileImage String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  activities   Activity[]
+
+  @@map("admins")
+}
+
+model Faq {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  faqType   FaqKey
+  question  String   @unique
+  answer    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model TermsAndCondition {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       TermsKey @unique
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("terms_and_condition")
+}
+
+model PrivacyPolicy {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  key       PrivacyKey @unique
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("privacyPolicies")
+}
+
+model Subscription {
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  title            String             @unique
+  freeSession      Int
+  features         Json
+  fee              Float
+  type             TInterval          @unique
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  userSubscription UserSubscription[]
+
+  @@map("subscription")
+}
+
+model UserSubscription {
+  id                      String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId                  String          @unique @db.ObjectId
+  type                    TInterval
+  sourceId                String?
+  subscriptionId          String          @db.ObjectId
+  nextPayment             DateTime
+  availableFreeSession    Int
+  interval                Int
+  isScheduledCancellation Boolean         @default(false)
+  status                  Boolean         @default(false)
+  subscription            Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user                    User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  adminEarnings           AdminEarnings[]
+
+  @@map("userSubscription")
+}
+
+model ExpertPlan {
+  id                  String               @id @default(auto()) @map("_id") @db.ObjectId
+  title               String               @unique
+  mockCut             Int
+  serviceCut          Int
+  features            Json
+  fee                 Float
+  type                TExpertInterval      @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  expertSubscriptions ExpertSubscription[]
+
+  @@map("expertPlans")
+}
+
+model ExpertSubscription {
+  id                      String          @id @default(auto()) @map("_id") @db.ObjectId
+  expertId                String          @unique @db.ObjectId
+  type                    TExpertInterval
+  sourceId                String?
+  subscriptionId          String          @db.ObjectId
+  nextPayment             DateTime
+  interval                Int
+  isScheduledCancellation Boolean         @default(false)
+  status                  Boolean         @default(false)
+  subscriptionPlan        ExpertPlan?     @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  expert                  User?           @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  adminEarnings           AdminEarnings[]
+
+  @@map("expertSubscriptions")
+}
+
+enum UserStatus {
+  ACTIVE
+  DEACTIVATE
+  PENDING
+  DELETED
+  SUSPENDED
+}
+
+enum TApplyStatus {
+  Pending
+  Accepted
+  Rejected
+}
+
+enum WithdrawStatus {
+  Pending
+  Accepted
+  In_Progress
+  Rejected
+}
+
+enum TServiceType {
+  LinkedIn
+  Career
+  Cv
+  MockInterview
+}
+
+enum TermsKey {
+  User
+  Expert
+}
+
+enum PrivacyKey {
+  User
+  Expert
+}
+
+enum FaqKey {
+  User
+  Expert
+}
+
+enum TInterval {
+  ThreeDays
+  Weekly
+  Monthly
+}
+
+enum TExpertInterval {
+  Yearly
+  Monthly
+}
+
+enum BookingStatus {
+  In_Progress
+  Completed
+  Cancelled
+  Recording_Progress
+  Resolved_In_Dispute
+  Expired
+}
+
+enum TSubject {
+  Refund
+  Technical_Issue
+  Behaviour_Issue
+  Others
+}
+
+enum TUserSubject {
+  Expert_No_Show
+  Non_Delivery
+  Technical_Failure
+  Quality_Issue
+  Bad_Behaviour
+}
+
+enum TExpertSubject {
+  User_No_Show
+  Extra_Demands
+  Unfair_Rating
+  Technical_Failure
+  Bad_Behaviour
+}
+
+enum TUserReportStatus {
+  Pending
+  Full_Refund
+  No_Refund
+  Formal_Warning
+  Partial_Refund
+  Account_Suspend
+}
+
+enum TExpertReportStatus {
+  Pending
+  Release_Payment
+  Review_Removed
+  Formal_Warning
+  Account_Suspend
+}
+
+enum TNotificationType {
+  Order
+  Session
+  Earning
+  Feedback
+  Admin
+  Subscription
+  Message
+}
+
+enum TReceivers {
+  AllUsers
+  Seekers
+  Experts
+  SingleUser
+}
+
+enum TEarningType {
+  Subscription
+  Session
+  Order
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  EXPERT
+  USER
+}
+
+enum AdminRole {
+  SuperAdmin
+  FinanceAdmin
+  UserAdmin
+  DisputeAdmin
+  ContentAdmin
+}
