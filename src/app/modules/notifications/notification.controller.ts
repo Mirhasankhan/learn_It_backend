@@ -1,0 +1,44 @@
+import catchAsync from "../../../shared/catchAsync";
+import sendResponse from "../../../shared/sendResponse";
+import { notificationServices } from "./notification.services";
+
+const getNotifications = catchAsync(async (req: any, res: any) => {
+  const notifications = await notificationServices.getNotificationsFromDB(req);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Notifications retrieved successfully",
+    data: notifications,
+  });
+});
+
+const getSingleNotificationById = catchAsync(async (req: any, res: any) => {
+  const notificationId = req.params.id;
+  const notification = await notificationServices.getSingleNotificationFromDB(
+    req,
+    notificationId
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Notification retrieved successfully",
+    data: notification,
+  });
+});
+const markAllRead = catchAsync(async (req: any, res: any) => {
+  await notificationServices.markAllNotificationRead(req.user.id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "All notification marked as read",
+  });
+});
+
+export const notificationController = {
+  getNotifications,
+  getSingleNotificationById,
+  markAllRead
+};
