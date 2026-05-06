@@ -6,6 +6,7 @@ import config from "../config";
 const DO_CONFIG = {
   endpoint: config.digitalOceanspaces.spaces_endpoint,
   region: config.digitalOceanspaces.spaces_region,
+  useSSL: false,
   credentials: {
     accessKeyId: config.digitalOceanspaces.spaces_key as string,
     secretAccessKey: config.digitalOceanspaces.spaces_secret as string,
