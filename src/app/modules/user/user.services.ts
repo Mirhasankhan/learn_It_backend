@@ -54,8 +54,8 @@ const sendLoginOtpToPhone = async (payload: Otp) => {
   //   );
   // }
 
-  const response = await sendOtpAuthentica(payload.phoneNumber, "sms");
-  // const response = { success: true, message: "Otp sent successfully" };
+  // const response = await sendOtpAuthentica(payload.phoneNumber, "sms");
+  const response = { success: true, message: "Otp sent successfully" };
 
   if (response.success == true) {
     await prisma.otp.upsert({
@@ -83,8 +83,8 @@ const verifyLoginOtpFromDB = async (phoneNumber: string, otp: string) => {
     throw new ApiError(409, "No user request sent using this phone number");
   }
 
-  const response = await verifyOtpAuthentica(phoneNumber, "phone", otp);
-  // const response = { status: true, message: "Verification successfull", otp };
+  // const response = await verifyOtpAuthentica(phoneNumber, "phone", otp);
+  const response = { status: true, message: "Verification successfull", otp };
 
   if (response.status === false) {
     throw new ApiError(404, `${response.message}`);
